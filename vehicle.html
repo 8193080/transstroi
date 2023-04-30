@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Карточка авто</title>
+    </head>
+    <body onload="getNum()">
+        <div id="main">
+            <div class="character_block">
+                <div id="image_block"></div>
+                <div id="num">
+                    <div id="garage_num">
+                    </div>
+                    <div id="gov_num">
+                      Загрузка...0%
+                    </div>
+                </div>
+                <div id="name"></div>
+                <div id="character">
+                  <div id="VIN"></div>
+                  <div id="color"></div>
+                  <div id="year"></div>
+                  <div id="mileage"></div>
+                </div>
+            </div>
+
+            <div class="status_block">
+                <div>
+                    <div class="stat_names" id="status_name"></div>
+                    <div class="stat_date" id="status_start"></div>
+                    <div class="stat_date" id="status_finish"></div>
+                </div>
+                <div>
+                    <div class="stat_names" id="location_name"></div>
+                    <div class="stat_date" id="location_start"></div>
+                    <div class="stat_date" id="location_finish"></div>
+                </div>
+            </div>
+
+            <div class="new_status_block">Изменение статуса
+                <div class="first_input" id="new_status">
+                  <div class="label_input">Статус:</div>
+                    <select id='status_set'>
+                      <option>На линии ✔️</option>
+                      <option>Простой 💤</option>
+                      <option>Диагностика 🔎</option>
+                      <option>Ожидание з/ч ⚙️</option>
+                      <option>ТО 💧</option>
+                      <option>Ремонт 🔧</option>
+                    </select>
+                </div>
+                <div class="first_input" id="new_location">
+                  <div class="label_input">Объект:</div>
+                    <select id='location_set'>
+                        <option>БухтаСевер ⚓</option>
+                        <option>СеверАлмаз 💎</option>
+                        <option>База 🏠</option>
+                    </select>
+                </div>
+                <div class="first_input" id="staff">
+                  <div class="label_input">Ответственный:</div>
+                    <select id="staff_input">  
+                        <option></option>                  
+                        <option>Иванов И. И. (СеверАлмаз)</option>
+                        <option>Петров П. П. (БухтаСевер)</option>
+                        <option>Петров П. А. (База)</option>
+                    </select>
+                </div>
+                <div class="second_input">
+                  <div class="label_input">Пробег/наработка:</div>
+                    <input type="number" id ="mileage_in" placeholder="пробег/моточасы">
+                    <div class="label_input">Статус до:</div>
+                    <input type="date" id="date_input">
+                </div>
+                <div class="extra_input">
+                  <div class="label_input">Комментарий:</div>
+                    <textarea id="note" type="text"></textarea>
+                </div>
+                <div id='button_box'>
+                  <div id="alert"></div>
+                    <button onclick="send()">Записать</button>
+                </div>
+            </div>
+        </div>
+        <div id="history_box"> 
+          <div class="label_input">История статусов:</div>
+        </div>
+    </body>
+    <script>
+      const veh_image = ['https://i.ibb.co/2qKBq4Q/MAN-TGA-33-350.png','https://i.ibb.co/72vS7WX/SCANIA-P400-CB6-X6-EHZ.png','https://i.ibb.co/g6mVmTC/SCANIA-P440-B6-X6-HZ.png','https://i.ibb.co/rFpnQbH/SCANIA-P440-CB6-X6-EHZ.png'];
+      const veh_list = [[1,2],[3,4],[5,6,7,8,9,10],[11,12,13,14,15]];
+      const image_box = document.querySelector('#image_block');
+      const gnum_box = document.querySelector('#garage_num');
+      const gov_num_box = document.querySelector('#gov_num');
+      const name_box = document.querySelector('#name');
+      const vin_box = document.querySelector('#VIN');
+      const color_box = document.querySelector('#color');
+      const year_box = document.querySelector('#year');
+      const mileage_box = document.querySelector('#mileage');
+      const status_name_box = document.querySelector('#status_name');
+      const status_start_box = document.querySelector('#status_start');
+      const status_finish_box = document.querySelector('#status_finish');
+      const location_name_box = document.querySelector('#location_name');
+      const location_start_box = document.querySelector('#location_start');
+      const location_finish_box = document.querySelector('#location_finish');
+      const history_box = document.querySelector('#history_box');
+      const alert = document.querySelector('#alert');
+
+      const dateValue = document.querySelector('#date_input');
+      const mileage_input = document.querySelector('#mileage_in');
+      const status_input = document.querySelector('#status_set');
+      const location_input = document.querySelector('#location_set');
+      const comment_input = document.querySelector('#note');
+      const staff_input = document.querySelector('#staff_input');
+
+      var gnum1
+      var gov_num1
+      var name
+      var vin
+      var color
+      var year
+      var mileage
+      var status
+      var stat_start
+      var stat_finish
+      var location_vh
+      var loc_start
+      var loc_finish
+      var today
+
+      function getNum () {
+        google.script.run.withSuccessHandler(setNum).gsGetNum()
+      }
+
+      async function setNum(n){
+        gov_num_box.textContent = "Загрузка...50%"
+        num = n
+        for (let i = 0; i < veh_image.length; i++) {
+          if ((veh_list[i]).includes(n) == true) {
+            var image_this = document.createElement('img');
+              image_box.appendChild(image_this);
+              image_this.setAttribute('src', veh_image[i]);
+              image_this.setAttribute('id', 'image');
+          }
+        }
+        google.script.run.withSuccessHandler(setChar).vehicle_info()
+      }
+
+      function getDate() {
+        today = new Date();
+        today.setDate(today.getDate());
+        today = today.toLocaleString('sv').substring(0, 10);
+      }
+
+      async function send () {
+        console.log(dateValue.value)
+        console.log(mileage)
+        console.log(mileage_input.value)
+        console.log(comment_input.value)
+        console.log(staff_input.value)
+        getDate()
+        if (dateValue.value == "" || mileage_input.value == "" || comment_input.value == "" || staff_input.value == "") {
+          alert.textContent = "Проверь, что все поля заполнены"
+        }
+        else if (Date(dateValue.date) < today) {
+          alert.textContent = "Дата окончания действия статуса не может быть раньше сегодняшнего дня"
+        }
+        else if (mileage_input.value < mileage[0]) {
+          alert.textContent = "Пробег не может быть меньше предыдущего значения"
+        }
+        else {
+          var date_finish = dateValue.value;
+          var mileage_new = mileage_input.value;
+          var new_status = status_input.value;
+          var new_obj = location_input.value;
+          var comment = comment_input.value;
+          await google.script.run.write(date_finish, mileage_new,new_status,new_obj,comment);
+          google.script.run.test2()
+        }
+      }
+
+        function setChar(char) {
+            gnum1 = char.gnum
+            gov_num1 = char.grz
+            name = char.name
+            vin = char.vin
+            color = char.color
+            year = char.year
+            mileage = char.mileage
+            console.log(mileage)
+            status = char.status
+            stat_start = char.stat_start
+            stat_finish = char.stat_finish
+            location_vh = char.location
+            loc_start = char.loc_start
+            loc_finish = char.loc_finish
+
+            gnum_box.textContent = gnum1
+            gov_num_box.textContent = gov_num1
+            name_box.textContent = name
+            vin_box.textContent = 'VIN: ' + vin
+            color_box.textContent = "Цвет: " + color
+            year_box.textContent = year + "г."
+            mileage_box.textContent = "Пробег: " + mileage + " км."
+            status_name_box.textContent = status
+            status_start_box.textContent = "с " + stat_start
+            status_finish_box.textContent = "по " + stat_finish
+            location_name_box.textContent = location_vh
+            location_start_box.textContent = "с " + loc_start
+            location_finish_box.textContent = "по " + loc_finish
+            mileage_input.value = mileage
+            google.script.run.withSuccessHandler(setHistory).vehicle_history ()
+        }
+
+        function setHistory(history_array){
+          ar1 = history_array.vh_dateArray;
+          ar2 = history_array.vh_status;
+          ar3 = history_array.vh_loc;
+          ar4 = history_array.vh_finish_date;
+          ar5 = history_array.vh_note;
+          for (let i = 0; i < ar1.length; i++) {
+            var row_history = document.createElement('div');
+            row_history.setAttribute('class','row_h')
+            var cellA = document.createElement('div');
+            var cellB = document.createElement('div');
+            var cellC = document.createElement('div');
+            var cellD = document.createElement('div');
+            var cellE = document.createElement('div');
+            history_box.appendChild(row_history);
+            row_history.appendChild(cellA);
+            row_history.appendChild(cellB);
+            row_history.appendChild(cellC);
+            row_history.appendChild(cellD);
+            row_history.appendChild(cellE);
+            cellA.textContent = ar1[i]
+            cellB.textContent = ar2[i]
+            cellC.textContent = ar3[i]
+            cellD.textContent = ar4[i]
+            cellE.textContent = ar5[i]
+            cellA.setAttribute('class','cell')
+            cellB.setAttribute('class','cell')
+            cellC.setAttribute('class','cell')
+            cellD.setAttribute('class','cell')
+            cellE.setAttribute('class','cell_note')
+          }
+
+          console.log('sH_ok')
+          console.log(ar1)
+        }
+    </script>
+    <style>
+
+      @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+
+        html {
+            font-size: 14px;
+            background-color: #F2F9FE;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            width: 850px;
+            height: auto;
+            margin: 0 auto;
+            background-color: #F2F9FE;
+            padding: 0 0 0 0;
+        }
+        select {
+            width: 100%;
+            height: 25px;
+        }
+        input {
+            width: 100%;
+            height: 100%;
+            padding: 0 0 0 0;
+        }
+
+        #main {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .character_block {
+            width: 25%; 
+            height: 330px;
+            padding: 15px 15px 15px 15px; 
+            margin-left: 15px
+        }
+
+        .status_block {
+            width: 25%; 
+            height: 330px;
+            padding: 15px 15px 15px 15px;  
+        }
+        .new_status_block {
+            width: 40%; 
+            height: 330px;
+            padding: 15px 15px 15px 15px; 
+            margin-top: 15px;
+            background-color: #D8EAFF; 
+            margin-right:15px;
+        }
+
+        #image_block {
+            height: 120px;
+            width: 212px;
+        }
+        #image {
+            height: 100%;
+        }
+        #num {
+            display: flex;
+            align-items: center;
+            justify-content: left;
+            margin-bottom: 15px;
+        }
+        #garage_num {
+            width: 50px;
+            height: 30px;
+            font-size: 28px;
+            font-weight: bold;
+            align-items: center;
+            justify-content: center;
+            display: flex;
+        }
+        #gov_num {
+            width: 125px;
+            height: 30px;
+            font-size: 14px;
+            align-items: center;
+            justify-content: center;
+            display: flex;
+            background-color: white;
+            margin-left: 20px;
+        }
+        
+        .first_input{
+            width: 318px;
+            height: 38px;
+            padding: 5px 5px 5px 5px;
+        }
+
+        .button {
+          width: 100px;
+          height: 25px;
+        }
+
+        .second_input {
+            width: 318px;
+            height: 25px;
+            padding: 5px 5px 5px 5px;
+            display: flex;
+        }
+        #mileage_in {
+            margin: 0px 0px 0px 0px;
+            height: 25px;
+        }
+        #date_input {
+            font-family: 'Roboto', sans-serif;
+            margin: 0px 0px 0px 10px;
+            height: 25px;
+        }
+        .extra_input {
+            width: 318px;
+            height: 96px;
+            padding: 5px 5px 5px 5px;
+        }
+        #note {
+            width: 306px;
+            word-wrap: break-word;
+            text-align: left;
+            padding: 3px 5px 3px 5px;
+            position: static;
+            font-family: 'Roboto', sans-serif;
+            height: 100%
+        }
+        #button_box {
+            display: flex;
+            align-items: center;
+            justify-content: right;
+            padding: 5px 5px 5px 5px;
+        }
+
+        button {
+          height: 25px;
+          font-family: 'Roboto', sans-serif;
+        }
+
+        #name {
+            width: 250px;
+            height: 30px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .stat_names {
+          height: 25px;
+          font-size: 22px;
+          font-weight: bold;
+          margin: 10px 10px 10px 0px
+        }
+        .stat_date {
+          font-weight: italic;
+        }
+        .cell {
+          background-color: white;
+          margin: 1px 1px 1px 1px;
+          width: 120px;
+          min-height: 30px
+        }
+        #history_box {
+          margin: 0px 10px 0px 10px
+        }
+        .row_h {
+            display: flex;
+            align-items: left;
+            justify-content: left;
+            min-height: 30px;
+            margin: 0px 0px 0px 0px
+        }
+        .cell_note {
+          background-color: white;
+          margin: 1px 1px 1px 1px;
+          min-width: 120px;
+          min-height: 30px;
+          height: auto;
+          align-items: center;
+          justify-content: center;
+
+        }
+        .label_input {
+          font-size: 10px;
+          margin-left: 5px;
+          margin-right: 5px;
+        }
+    </style>
+</html>
